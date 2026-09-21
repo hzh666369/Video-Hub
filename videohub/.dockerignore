@@ -1,0 +1,17 @@
+# 构建上下文只需 frontend 源码 + backend 源码，其余全部排除以加速构建
+.git
+.codegraph
+**/__pycache__
+**/*.pyc
+backend/.venv
+backend/.env
+backend/.pytest_cache
+backend/*.egg-info
+backend/static
+backend/videohub.db*
+backend/logs
+backend/*.log
+backend/tests
+frontend/node_modules
+frontend/dist
+*.log
