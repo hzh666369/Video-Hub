@@ -1,0 +1,49 @@
+# ===== OS / 编辑器 =====
+.DS_Store
+Thumbs.db
+.idea/
+*.sw?
+# 保留共享的 .vscode/extensions.json（团队推荐插件），忽略其余本地设置
+.vscode/*
+!.vscode/extensions.json
+
+# ===== Python（videohub/backend）=====
+__pycache__/
+*.pyc
+.venv/
+*.egg-info/
+.pytest_cache/
+
+# ===== Node / 前端构建（videohub/frontend）=====
+node_modules/
+dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ===== 运行时产物 / 数据库（videohub/backend，含 Docker 卷本地映射）=====
+videohub/backend/static/
+logs/
+*.log
+*.db
+*.db-wal
+*.db-shm
+
+# ===== 密钥 / 本地部署数据，绝不入库 =====
+.env
+历史文件/
+Docker/clauflaretoken.txt
+Docker/tunnel-url.txt
+Docker/tunnel-quick.txt
+
+# ===== AI 调试工具运行态目录（任意层级，含嵌套子项目）=====
+.omc/
+.codegraph/
+.workbuddy/
+.superpowers/
+.wolf/
+.cursor/
+.vh-shots/

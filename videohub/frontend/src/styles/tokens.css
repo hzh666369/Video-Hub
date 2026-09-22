@@ -1,0 +1,912 @@
+/*
+ * VideoHub Design Tokens · 双主题（dark 默认 / light 可切换）
+ * 设计语言：Spotify 式「内容优先的沉浸暗色」
+ * （参考 design-md/spotify/DESIGN.md，结合中文视频平台语境适配）
+ *
+ * 切换机制：html[data-theme="light"] 覆盖变量；dark 为 :root 默认值，
+ * 由 stores/theme.js + index.html 内联脚本控制，偏好持久化在 localStorage(vh-theme)。
+ *
+ * 设计规则（两套主题共同强制）：
+ *  - 底色体系：dark 为近黑炭色页面 → 炭灰卡片 → 深灰输入框，UI 退到阴影里，
+ *    让封面图 / 内容成为唯一的色彩来源；light 为中性灰白页面 → 纯白卡片
+ *  - 主色：Spotify Green #1ED760，只做功能色（播放、选中、主行动、链接），
+ *    永不作为大面积装饰底色；实心绿底按钮上一律配纯黑文字与图标
+ *  - 高强调 CTA（登录 / 提交）：白色胶囊 + 黑字，暗底上最醒目的行动点
+ *  - VIP / 高级感点缀：琥珀橙 #FFA42B（Spotify 语义 warning 同源），
+ *    只用于 VIP 胶囊、指示器、强调小元素，不大面积使用
+ *  - 形状语言：按钮一律全胶囊（999px），圆形控件（播放钮 / 图标钮 / 头像）50%，
+ *    卡片 8px，输入框 4px，除此之外不引入其他圆角
+ *  - 阴影：暗底上阴影必须重 —— 卡片 0 8px 8px rgba(0,0,0,.3)，
+ *    弹层 0 8px 24px rgba(0,0,0,.5)，形成「漂浮在黑暗中」的层次
+ *  - 排版：粗细二元（700 / 400）拉开层级，字号紧凑（12-26px），
+ *    按钮文字加宽字距形成系统性的「标签嗓音」
+ *  - 语义色：成功 = 绿，警告 = 琥珀，危险 = #F3727F 文本 / #E91429 实底
+ *  - 文字：dark 上白 / 银灰 / 中灰三档（#FFF / #B3B3B3 / #7C7C7C），
+ *    无暖米色；背景无纯蓝紫、无网格科幻感
+ *  - 边框：发丝线 rgba(255,255,255,.07~.2)，能不用边框就不用边框，
+ *    层级优先靠底色深浅与重投影表达
+ */
+
+:root {
+  /* ---- 表面（自页面底层向上抬升，近黑炭色阶） ---- */
+  --bg: #121212;         /* 近黑页面底色 */
+  --bg-raise: #181818;   /* 页面与卡片之间的过渡层 */
+  --surface: #181818;    /* 炭灰卡片 */
+  --surface-2: #1f1f1f;  /* 输入框 / 交互面 */
+  --surface-3: #252525;  /* 选中态卡面 / 悬浮抬升 */
+
+  /* ---- 描边（发丝线，尽量克制） ---- */
+  --line: rgba(255, 255, 255, 0.07);
+  --line-strong: rgba(255, 255, 255, 0.12);
+  --line-hover: rgba(255, 255, 255, 0.2);
+
+  /* ---- 文字（白 / 银 / 中灰三档） ---- */
+  --text-1: #ffffff;     /* 标题 · 纯白 */
+  --text-2: #b3b3b3;     /* 正文 · 银灰（Spotify Silver） */
+  --text-3: #7c7c7c;     /* 辅助 / 提示 · 中灰 */
+  --success: #1ed760;    /* 成功文字档 */
+
+  /* ---- 品牌主色（Spotify Green · 功能色） ---- */
+  --accent: #1ed760;        /* 亮档：交互文字 / 链接 / 聚焦环 / 选中文字 */
+  --accent-strong: #1ed760; /* 实心主按钮底（一律配纯黑文字） */
+  --accent-hover: #3ce477;  /* 主按钮悬停提亮 */
+  --accent-press: #169c46;  /* 按下压暗 */
+  --accent-soft: rgba(30, 215, 96, 0.14);
+
+  /* ---- 琥珀橙（VIP / 标签 / 指示器 / 强调，Spotify warning 同源） ---- */
+  --gold: #ffa42b;        /* 胶囊底 / 指示器 / 图标高亮 */
+  --gold-bright: #ffb558; /* 琥珀文字档（深底可读） */
+  --gold-soft: rgba(255, 164, 43, 0.14);
+
+  /* ---- 品牌渐变（绿 → 深绿，滑块 / 品牌标等小面积高光） ---- */
+  --grad-brand: linear-gradient(96deg, #1ed760 0%, #169c46 100%);
+  --grad-brand-soft: linear-gradient(96deg, rgba(30, 215, 96, 0.16), rgba(22, 156, 70, 0.16));
+
+  /* ---- 语义状态色 ---- */
+  --ok: #1ed760;                    /* 成功 → 绿 */
+  --ok-soft: rgba(30, 215, 96, 0.12);
+  --warn: #ffa42b;                  /* 警告 → 琥珀 */
+  --warn-soft: rgba(255, 164, 43, 0.12);
+  --danger: #f3727f;                /* 亮红文字档（Spotify negative） */
+  --danger-soft: rgba(243, 114, 127, 0.13);
+  --danger-strong: #e91429;         /* 实底红：危险按钮（删除 / 危险操作专用） */
+  --danger-hover: #cf0e1f;
+
+  /* ---- 字体 ---- */
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
+    "HarmonyOS Sans SC", "MiSans", "Microsoft YaHei", "Source Han Sans SC", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", Consolas, "JetBrains Mono", monospace;
+
+  /* ---- 圆角（按钮胶囊 / 卡片 8 / 输入 4 / 大面板 12） ---- */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-pill: 999px;
+
+  /* ---- 阴影（暗底重投影：漂浮在黑暗中） ---- */
+  --shadow-1: 0 2px 6px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 8px 8px rgba(0, 0, 0, 0.3);
+  --shadow-3: 0 8px 24px rgba(0, 0, 0, 0.5);
+
+  /* ---- 弹窗蒙层 ---- */
+  --overlay: rgba(0, 0, 0, 0.7);
+
+  /* ---- 主题表面微透层（dark=白微透 / light=黑微透） ---- */
+  --tint: rgba(255, 255, 255, 0.06);
+  --tint-hover: rgba(255, 255, 255, 0.08);
+  --tint-faint: rgba(255, 255, 255, 0.03);
+
+  /* ---- 场景表面（导航 / 弹层 / 面板 / 暗角 / 登录页） ---- */
+  --nav-bg: rgba(18, 18, 18, 0.8);
+  --popover-bg: linear-gradient(180deg, #262626, #1c1c1c);
+  --popover-solid: #252525;
+  --grad-panel: linear-gradient(180deg, #1f1f1f, #181818);
+  --vignette: rgba(0, 0, 0, 0.5);
+  --vignette-strong: rgba(0, 0, 0, 0.55);
+  --login-bg: linear-gradient(168deg, #181818 0%, #121212 52%, #0e0e0e 100%);
+
+  /* ---- 高光 / 微动效色 ---- */
+  --sheen: rgba(255, 255, 255, 0.08);
+  --shimmer: rgba(255, 255, 255, 0.06);
+  --inset-hl: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  --scrollbar-hover: #3a3a3a;
+  --input-focus: #ffffff;  /* 输入聚焦描边：暗底用白线（Spotify 惯例） */
+
+  /* ---- z-index 阶梯 ---- */
+  --z-nav: 100;
+  --z-toast: 200;
+
+  /* ---- 布局 ---- */
+  --nav-h: 64px;
+  --page-w: 1200px;
+
+  /* ---- 动效曲线 ---- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ============================================================
+ * 浅色主题（html[data-theme="light"]）
+ * 同一套设计语言换中性灰白底：纯白卡片 + 冷灰输入框 + 近黑文字，
+ * 绿色文字档加深保证 ≥ 4.5:1 对比度，光效与阴影整体降强。
+ * ============================================================ */
+html[data-theme="light"] {
+  color-scheme: light;
+
+  /* ---- 表面 ---- */
+  --bg: #f5f6f7;
+  --bg-raise: #eff0f1;
+  --surface: #ffffff;
+  --surface-2: #f0f1f3;
+  --surface-3: #e8eaee;
+
+  /* ---- 描边 ---- */
+  --line: rgba(0, 0, 0, 0.08);
+  --line-strong: rgba(0, 0, 0, 0.14);
+  --line-hover: rgba(0, 0, 0, 0.24);
+
+  /* ---- 文字（近黑三档） ---- */
+  --text-1: #121212;
+  --text-2: #575757;
+  --text-3: #8a8a8a;
+  --success: #15803d;
+
+  /* ---- 品牌主色：白底文字档加深，实心钮保持亮绿 + 黑字 ---- */
+  --accent: #15803d;
+  --accent-strong: #1ed760;
+  --accent-hover: #24d95f;
+  --accent-press: #169c46;
+  --accent-soft: rgba(30, 215, 96, 0.14);
+
+  /* ---- 琥珀橙（浅底加深） ---- */
+  --gold: #d97706;
+  --gold-bright: #b45309;
+  --gold-soft: rgba(217, 119, 6, 0.12);
+
+  /* ---- 语义状态色（浅底加深保证可读） ---- */
+  --ok: #15803d;
+  --ok-soft: rgba(21, 128, 61, 0.1);
+  --warn: #b45309;
+  --warn-soft: rgba(217, 119, 6, 0.12);
+  --danger: #d63645;
+  --danger-soft: rgba(214, 54, 69, 0.09);
+  --danger-strong: #e91429;
+  --danger-hover: #cf0e1f;
+
+  /* ---- 阴影（浅底走柔和投影） ---- */
+  --shadow-1: 0 1px 4px rgba(0, 0, 0, 0.08);
+  --shadow-2: 0 6px 12px rgba(0, 0, 0, 0.1);
+  --shadow-3: 0 12px 28px rgba(0, 0, 0, 0.16);
+
+  /* ---- 弹窗蒙层 ---- */
+  --overlay: rgba(0, 0, 0, 0.42);
+
+  /* ---- 表面微透层 ---- */
+  --tint: rgba(0, 0, 0, 0.04);
+  --tint-hover: rgba(0, 0, 0, 0.06);
+  --tint-faint: rgba(0, 0, 0, 0.025);
+
+  /* ---- 场景表面 ---- */
+  --nav-bg: rgba(255, 255, 255, 0.82);
+  --popover-bg: linear-gradient(180deg, #ffffff, #fafafa);
+  --popover-solid: #ffffff;
+  --grad-panel: linear-gradient(180deg, #ffffff, #f6f7f8);
+  --vignette: rgba(0, 0, 0, 0.12);
+  --vignette-strong: rgba(0, 0, 0, 0.16);
+  --login-bg: linear-gradient(168deg, #f2f3f5 0%, #f7f8f9 52%, #eef0f2 100%);
+
+  /* ---- 高光 / 微动效色 ---- */
+  --sheen: rgba(0, 0, 0, 0.04);
+  --shimmer: rgba(255, 255, 255, 0.75);
+  --inset-hl: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --scrollbar-hover: #cfd3d8;
+  --input-focus: #121212;  /* 输入聚焦描边：浅底用近黑线 */
+}
+
+html[data-theme="light"] {
+  /* ---- 光效（降强，避免浅底刺眼） ---- */
+  --glow-accent: 0 6px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(30, 215, 96, 0.25);
+  --glow-violet: 0 6px 16px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(217, 119, 6, 0.25);
+  --halo-accent: radial-gradient(closest-side, rgba(30, 215, 96, 0.12), transparent 72%);
+  --halo-violet: radial-gradient(closest-side, rgba(255, 164, 43, 0.1), transparent 72%);
+
+  /* ---- 流动渐变描边 ---- */
+  --edge-a: rgba(30, 215, 96, 0.5);
+  --edge-b: rgba(255, 164, 43, 0.4);
+  --edge-faint: rgba(30, 215, 96, 0.06);
+
+  /* ---- 玻璃拟态 ---- */
+  --glass-bg: rgba(255, 255, 255, 0.78);
+  --glass-bg-thin: rgba(255, 255, 255, 0.55);
+  --glass-line: rgba(0, 0, 0, 0.08);
+
+  /* ---- 网格空间（浅底几乎不可见） ---- */
+  --grid-line: rgba(0, 0, 0, 0.03);
+}
+
+/* 浅色主题按钮适配：描边胶囊反转成黑描边，白胶囊 CTA 反转成黑底白字 */
+html[data-theme="light"] .vh-btn-ghost {
+  border-color: rgba(0, 0, 0, 0.32);
+}
+html[data-theme="light"] .vh-btn-ghost:hover:not(:disabled) {
+  border-color: #000;
+  color: #000;
+}
+html[data-theme="light"] .vh-btn-aurora {
+  background: #121212;
+  color: #fff;
+}
+
+/* ================= 基础 ================= */
+
+* { box-sizing: border-box; }
+
+html { color-scheme: dark; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-1);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  /* 近黑底只保留顶部一缕极弱的绿意氛围，其余交给纯粹的黑 */
+  background-image:
+    radial-gradient(1000px 520px at 50% -14%, rgba(30, 215, 96, 0.05), transparent 62%);
+  background-attachment: fixed;
+  min-height: 100dvh;
+}
+
+/* 浅色主题：氛围光几乎关闭 */
+html[data-theme="light"] body {
+  background-image:
+    radial-gradient(1000px 520px at 50% -14%, rgba(30, 215, 96, 0.05), transparent 62%);
+}
+
+::selection { background: rgba(30, 215, 96, 0.32); color: var(--text-1); }
+
+/* 炭色调滚动条 */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--surface-3); border-radius: var(--r-pill); border: 2px solid var(--bg); }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-hover); }
+::-webkit-scrollbar-track { background: transparent; }
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* 数字 / 时间戳等数据统一等宽 */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+/* ================= 通用组件类 ================= */
+
+/* 页面容器 */
+.vh-page {
+  max-width: var(--page-w);
+  margin: 0 auto;
+  padding: 28px 24px 64px;
+  animation: vh-page-in 0.5s var(--ease-out) both;
+}
+@keyframes vh-page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* 统一页面头部：标题 + 副标题，全站一致节奏 */
+.vh-head { margin-bottom: 24px; }
+.vh-head-title {
+  margin: 0 0 8px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text-1);
+  line-height: 1.3;
+}
+.vh-head-sub {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.vh-head-sub .num { color: var(--accent); font-weight: 600; }
+
+/* 卡片：仅用于真实层级抬升；hover 底色变浅 + 重投影 */
+.vh-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 20px;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+.vh-card:hover {
+  background: var(--surface-2);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-2);
+}
+
+/* 按钮：全胶囊 + 加宽字距的「标签嗓音」 */
+.vh-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: var(--r-pill);
+  font: 700 14px/1 var(--font-sans);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.12s ease,
+    box-shadow 0.2s ease;
+  user-select: none;
+}
+.vh-btn:active { transform: scale(0.97); }
+.vh-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+
+/* 主按钮：亮绿实心 + 纯黑文字（Spotify 播放钮同款）；hover 放大 */
+.vh-btn-primary {
+  background: var(--accent-strong);
+  color: #000;
+  box-shadow: var(--shadow-1);
+}
+.vh-btn-primary:hover:not(:disabled) {
+  background: var(--accent-hover);
+  transform: scale(1.035);
+  box-shadow: var(--shadow-2);
+}
+.vh-btn-primary:active:not(:disabled) { background: var(--accent-press); transform: scale(0.97); }
+
+/* 白色胶囊 CTA（登录 / 提交等最高强调行动）：白底黑字 */
+.vh-btn-aurora {
+  background: #ffffff;
+  color: #000;
+  box-shadow: var(--shadow-2);
+}
+.vh-btn-aurora:hover:not(:disabled) {
+  transform: scale(1.035);
+  box-shadow: var(--shadow-3);
+}
+.vh-btn-aurora:active:not(:disabled) { transform: scale(0.97); }
+
+/* 次要按钮：透明底 + 白字 + 灰描边（Spotify Outlined Pill） */
+.vh-btn-ghost {
+  background: transparent;
+  color: var(--text-1);
+  border-color: rgba(255, 255, 255, 0.32);
+}
+.vh-btn-ghost:hover:not(:disabled) {
+  border-color: #ffffff;
+  color: #ffffff;
+  transform: scale(1.035);
+}
+
+/* 空状态行动按钮 / 柔和强调：绿染底 + 绿字 */
+.vh-btn-soft {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.vh-btn-soft:hover:not(:disabled) {
+  background: rgba(30, 215, 96, 0.24);
+  transform: scale(1.035);
+}
+
+/* 危险按钮：实底红，删除 / 危险操作专用 */
+.vh-btn-danger { background: var(--danger-strong); color: #fff; }
+.vh-btn-danger:hover:not(:disabled) {
+  background: var(--danger-hover);
+  transform: scale(1.035);
+  box-shadow: var(--shadow-2);
+}
+.vh-btn-danger:active:not(:disabled) { transform: scale(0.97); }
+
+.vh-btn-sm { height: 30px; padding: 0 14px; font-size: 13px; }
+
+/* 按钮图标微动效：hover 时轻微右移，制造「前进感」 */
+.vh-btn svg { transition: transform 0.2s var(--ease-out); }
+.vh-btn:hover:not(:disabled) svg { transform: translateX(2px); }
+
+/* 输入控件：深灰凹陷面 + 发丝描边，聚焦白色描边（Spotify 输入框惯例） */
+.vh-input,
+.vh-select,
+.vh-textarea {
+  width: 100%;
+  background: var(--surface-2);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--text-1);
+  font: 400 14px/1.5 var(--font-sans);
+  padding: 9px 12px;
+  transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+.vh-input::placeholder,
+.vh-textarea::placeholder { color: var(--text-3); }
+.vh-input:hover,
+.vh-select:hover,
+.vh-textarea:hover { border-color: var(--line-hover); }
+.vh-input:focus,
+.vh-select:focus,
+.vh-textarea:focus {
+  outline: none;
+  border-color: var(--input-focus);
+  background: var(--surface-2);
+  box-shadow: 0 0 0 1px var(--input-focus);
+}
+.vh-select {
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23b3b3b3' stroke-width='1.6' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+}
+.vh-select option { background: var(--surface); color: var(--text-1); }
+.vh-textarea { resize: vertical; min-height: 72px; }
+
+/* 表单块：标签在上 */
+.vh-field { display: flex; flex-direction: column; gap: 6px; }
+.vh-field > label { font-size: 13px; font-weight: 600; color: var(--text-2); }
+
+/* 胶囊徽标（普通） */
+.vh-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* VIP 胶囊：琥珀染底 + 琥珀字，高级感点缀；带缓慢呼吸辉光 */
+.vh-chip-gold {
+  background: var(--gold-soft);
+  border-color: rgba(255, 164, 43, 0.42);
+  color: var(--gold-bright);
+  font-weight: 600;
+  animation: vh-gold-breathe 3s ease-in-out infinite;
+}
+@keyframes vh-gold-breathe {
+  0%, 100% { box-shadow: 0 0 0 rgba(255, 164, 43, 0); }
+  50% { box-shadow: 0 0 14px -2px rgba(255, 164, 43, 0.4); }
+}
+
+/* 未配置 / 提示性琥珀标签（描边式，避免大面积铺色） */
+.vh-tag-gold {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: var(--r-pill);
+  background: var(--gold-soft);
+  border: 1px solid rgba(255, 164, 43, 0.42);
+  color: var(--gold-bright);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* 骨架屏（形状贴合最终布局的加载态） */
+.vh-skeleton {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-2);
+  border-radius: var(--r-sm);
+}
+.vh-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, var(--shimmer), transparent);
+  animation: vh-shimmer 1.6s infinite;
+}
+@keyframes vh-shimmer { to { transform: translateX(100%); } }
+
+/* 空状态：线稿插画 + 高对比文案 */
+.vh-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+  color: var(--text-2);
+}
+.vh-empty > svg { color: var(--text-3); }
+.vh-empty .vh-empty-title { font-size: 18px; font-weight: 700; color: var(--text-1); }
+
+/* 通用 section 标题 */
+.vh-section-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-1);
+}
+.vh-section-title svg { color: var(--text-3); }
+.vh-section-desc { margin: -6px 0 0; color: var(--text-3); font-size: 13px; }
+
+/* 通用提示框：错误 / 成功 / 警告 */
+.vh-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.vh-alert svg { flex-shrink: 0; }
+.vh-alert-error {
+  background: var(--danger-soft);
+  border: 1px solid rgba(243, 114, 127, 0.4);
+  color: var(--danger);
+}
+.vh-alert-ok {
+  background: var(--ok-soft);
+  border: 1px solid rgba(30, 215, 96, 0.35);
+  color: var(--ok);
+}
+.vh-alert-warn {
+  background: var(--warn-soft);
+  border: 1px solid rgba(255, 164, 43, 0.35);
+  color: var(--warn);
+}
+
+/* 动画工具类 */
+.vh-fade-in { animation: vh-fade-in 0.4s var(--ease-out) both; }
+.vh-fade-in-up { animation: vh-fade-in-up 0.5s var(--ease-out) both; }
+.vh-fade-in-down { animation: vh-fade-in-down 0.5s var(--ease-out) both; }
+.vh-scale-in { animation: vh-scale-in 0.35s var(--ease-spring) both; }
+@keyframes vh-fade-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes vh-fade-in-up { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes vh-fade-in-down { from { opacity: 0; transform: translateY(-12px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes vh-scale-in { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: scale(1); } }
+
+/* 交错入场：子元素依次淡入上移 */
+.vh-stagger > * { animation: vh-fade-in-up 0.5s var(--ease-out) both; }
+.vh-stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.vh-stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.vh-stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.vh-stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.vh-stagger > *:nth-child(5) { animation-delay: 0.23s; }
+.vh-stagger > *:nth-child(6) { animation-delay: 0.28s; }
+.vh-stagger > *:nth-child(7) { animation-delay: 0.33s; }
+.vh-stagger > *:nth-child(8) { animation-delay: 0.38s; }
+.vh-stagger > *:nth-child(n+9) { animation-delay: 0.43s; }
+
+/* ============================================================
+ * 氛围质感层
+ * Spotify 式克制：只用重投影与底色深浅分层，
+ * 少量绿色光晕 / 流光描边做点缀，不再有网格与扫描线科幻感。
+ * ============================================================ */
+
+:root {
+  /* ---- 光效 ---- */
+  --glow-accent: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(30, 215, 96, 0.35);
+  --glow-violet: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 164, 43, 0.35);
+  --halo-accent: radial-gradient(closest-side, rgba(30, 215, 96, 0.18), transparent 72%);
+  --halo-violet: radial-gradient(closest-side, rgba(255, 164, 43, 0.14), transparent 72%);
+
+  /* ---- 流动渐变描边 ---- */
+  --edge-a: rgba(30, 215, 96, 0.55);
+  --edge-b: rgba(255, 164, 43, 0.45);
+  --edge-faint: rgba(30, 215, 96, 0.08);
+
+  /* ---- 玻璃拟态（blur 16px + 发丝边框） ---- */
+  --glass-blur: 16px;
+  --glass-bg: rgba(24, 24, 24, 0.72);
+  --glass-bg-thin: rgba(255, 255, 255, 0.04);
+  --glass-line: rgba(255, 255, 255, 0.1);
+
+  /* ---- 网格空间（保留 token 兼容，但压到极弱） ---- */
+  --grid-line: rgba(255, 255, 255, 0.025);
+  --grid-size: 44px;
+
+  /* ---- 动效时长阶梯 ---- */
+  --dur-1: 0.18s;
+  --dur-2: 0.28s;
+  --dur-3: 0.45s;
+  --dur-4: 0.9s;
+}
+
+/* 玻璃拟态面板：用于导航 / 悬浮层 / Popover / 登录卡片 */
+.vh-glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.2);
+  border: 1px solid var(--glass-line);
+}
+
+/* 渐变文字：亮绿 → 深绿 → 亮绿循环流光，只用于大标题，正文不用 */
+.vh-grad-text {
+  background-image: linear-gradient(96deg, #7cf0a8 8%, #1ed760 50%, #7cf0a8 92%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  animation: vh-grad-pan 7s linear infinite;
+}
+@keyframes vh-grad-pan {
+  from { background-position: 0% 0; }
+  to { background-position: -220% 0; }
+}
+/* 浅色主题渐变文字加深一档，保证白底可读。
+ * ⚠️ 必须用 background-image（longhand），不能用 background shorthand：
+ *    shorthand 会一并重置 background-clip/background-origin，把上面的
+ *    `background-clip: text` 抹掉，导致渐变文字降级成一块纯色矩形，文字
+ *    也因 color/transparent 不可见（白底"消失"）。 */
+html[data-theme="light"] .vh-grad-text {
+  background-image: linear-gradient(96deg, #0f7a3a 8%, #15803d 50%, #0f7a3a 92%);
+}
+
+/* 眉标：等宽小字 + 呼吸圆点 */
+.vh-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 26px;
+  padding: 0 12px 0 10px;
+  border-radius: var(--r-pill);
+  background: var(--glass-bg-thin);
+  border: 1px solid var(--line);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.vh-eyebrow::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  animation: vh-breathe 2.4s var(--ease-in-out) infinite;
+}
+
+/* 点缀容器：极弱底纹（保留 token 兼容） */
+.vh-sci {
+  position: relative;
+  isolation: isolate;
+}
+.vh-sci::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: var(--grid-size) var(--grid-size);
+  background-position: center;
+  mask-image: radial-gradient(120% 90% at 50% 0%, #000 20%, transparent 78%);
+  -webkit-mask-image: radial-gradient(120% 90% at 50% 0%, #000 20%, transparent 78%);
+  pointer-events: none;
+}
+
+/* 扫光：hover 时斜向高光掠过，用于卡片与按钮 */
+.vh-sweep { position: relative; overflow: hidden; }
+.vh-sweep::after {
+  content: "";
+  position: absolute;
+  top: -60%;
+  left: -80%;
+  width: 45%;
+  height: 220%;
+  background: linear-gradient(90deg, transparent, var(--sheen), transparent);
+  transform: rotate(18deg) translateX(-140%);
+  transition: transform 0.75s var(--ease-out);
+  pointer-events: none;
+}
+.vh-sweep:hover::after { transform: rotate(18deg) translateX(420%); }
+
+/* 聚光卡片：鼠标跟随的主题色径向辉光（内层光晕 + 边框亮段）。
+ * 配合 v-glow 指令使用；--gx/--gy 由指令实时写入。
+ * isolation 保证负 z-index 的内层光晕不会沉到卡片背景之下。 */
+.vh-glow { position: relative; isolation: isolate; }
+/* 内层辉光：压在文字之下、卡片底色之上 */
+.vh-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--dur-3) ease;
+  background: radial-gradient(
+    340px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(30, 215, 96, 0.12),
+    rgba(255, 181, 88, 0.06) 42%,
+    transparent 68%
+  );
+  pointer-events: none;
+}
+.vh-glow:hover::before { opacity: 1; }
+/* 边框亮段：一圈 1px 描边被径向渐变点亮，跟随鼠标巡游 */
+.vh-glow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  padding: 1px;
+  opacity: 0;
+  transition: opacity var(--dur-3) ease;
+  background: radial-gradient(
+    240px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(60, 228, 119, 0.7),
+    rgba(255, 181, 88, 0.4) 45%,
+    transparent 75%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  pointer-events: none;
+}
+.vh-glow:hover::after { opacity: 1; }
+/* 浅色主题：白底上降低光晕浓度，避免发灰发脏 */
+html[data-theme="light"] .vh-glow::before {
+  background: radial-gradient(
+    340px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(22, 163, 74, 0.09),
+    rgba(255, 164, 43, 0.05) 42%,
+    transparent 68%
+  );
+}
+html[data-theme="light"] .vh-glow::after {
+  background: radial-gradient(
+    240px circle at var(--gx, 50%) var(--gy, 50%),
+    rgba(22, 163, 74, 0.5),
+    rgba(255, 164, 43, 0.35) 45%,
+    transparent 75%
+  );
+}
+
+/* 流动渐变描边：容器边框上有一道光持续巡游（点缀用） */
+.vh-edge-flow { position: relative; }
+.vh-edge-flow::before {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  padding: 1px;
+  background: conic-gradient(
+    from var(--edge-angle, 0deg),
+    transparent 0deg,
+    var(--edge-a) 40deg,
+    var(--edge-b) 70deg,
+    transparent 130deg,
+    transparent 360deg
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  opacity: 0;
+  transition: opacity var(--dur-2) ease;
+  pointer-events: none;
+}
+.vh-edge-flow:hover::before,
+.vh-edge-flow.is-live::before { opacity: 1; }
+
+/* 顶部光束：容器上沿一条极细高光 */
+.vh-beam { position: relative; overflow: hidden; }
+.vh-beam::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 12%;
+  right: 12%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--edge-a), var(--edge-b), transparent);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+/* 数据读出条：等宽数字 + 微光，用于统计/计数 */
+.vh-readout {
+  position: relative;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+/* ================= keyframes ================= */
+
+/* 旋转（通用加载基座） */
+@keyframes vh-rotate { to { transform: rotate(360deg); } }
+
+/* 轨道：中心核 + 卫星球 */
+@keyframes vh-orbit { to { transform: rotate(360deg); } }
+
+/* 波纹脉冲：多层同心圆扩散 */
+@keyframes vh-pulse-ring {
+  0% { transform: scale(0.55); opacity: 0.75; }
+  70% { opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+/* 呼吸：小圆点 / 光晕明暗循环 */
+@keyframes vh-breathe {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.45; transform: scale(0.82); }
+}
+
+/* 竖向扫描光束：自上而下（保留给 Morph 展开仪式感） */
+@keyframes vh-scan-y {
+  0% { transform: translateY(-110%); opacity: 0; }
+  12% { opacity: 1; }
+  88% { opacity: 1; }
+  100% { transform: translateY(760%); opacity: 0; }
+}
+
+/* 底纹缓慢漂移 */
+@keyframes vh-grid-drift {
+  from { background-position: 0 0, 0 0; }
+  to { background-position: 0 var(--grid-size), var(--grid-size) 0; }
+}
+
+/* 描边光巡游（配合 @property --edge-angle） */
+@keyframes vh-edge-spin { to { --edge-angle: 360deg; } }
+
+/* 上下浮动（装饰光球） */
+@keyframes vh-float {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(0, -18px, 0) scale(1.05); }
+}
+
+/* 柱条跳动（加载变体） */
+@keyframes vh-bars {
+  0%, 100% { transform: scaleY(0.35); }
+  50% { transform: scaleY(1); }
+}
+
+/* 文本微闪（终端感，仅用于极小号标签） */
+@keyframes vh-flicker {
+  0%, 100% { opacity: 1; }
+  48% { opacity: 1; }
+  50% { opacity: 0.45; }
+  52% { opacity: 1; }
+}
+
+/* 让 --edge-angle 可被动画驱动（支持的浏览器渐进增强） */
+@property --edge-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+.vh-edge-flow.is-live::before { animation: vh-edge-spin 4.5s linear infinite; }
+
+/* ================= 动效降级 ================= */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

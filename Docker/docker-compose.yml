@@ -1,0 +1,40 @@
+name: drone-test
+
+services:
+  drone-test:
+    build:
+      # 源码在仓库根的 videohub/（compose 文件在 Docker/ 子文件夹，故用 ../）
+      context: ../videohub
+      dockerfile: Dockerfile
+    image: drone-test:latest
+    container_name: drone-test
+    # 只绑定本机回环地址：内网同事无法直接访问，公网流量全部走 cloudflared 隧道。
+    # 想彻底只留隧道一个入口，删掉下面两行即可。
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      TZ: Asia/Shanghai
+      VIDEOHUB_SECRET_KEY: ${VIDEOHUB_SECRET_KEY}
+      VIDEOHUB_ADMIN_PASSWORD: ${VIDEOHUB_ADMIN_PASSWORD:-}
+      VIDEOHUB_COOKIE_SECURE: "1"
+      # VIDEOHUB_UPSTREAM_TIMEOUT: "300"
+    volumes:
+      # 卷名沿用 videohub-data：改名前就在用它存数据库，改名沿用才能保住旧数据
+      - videohub-data:/app/data
+    restart: unless-stopped
+
+  # Cloudflare 命名隧道（令牌模式）：固定域名 <你的域名>.kdns.fr（KataBump 免费二级域名，已 NS 委派到 Cloudflare）。
+  # - 令牌在 .env 的 TUNNEL_TOKEN（eyJ 开头，后台 Zero Trust → Tunnels → 你的隧道 → 复制）
+  # - 公网入口在 Zero Trust 后台配 Public Hostname：<你的域名>.kdns.fr → http://drone-test:8000
+  # - 域名固定，容器重启/整机重启地址都不变
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    container_name: drone-test-cloudflared
+    command: tunnel --no-autoupdate run --token ${TUNNEL_TOKEN}
+    restart: unless-stopped
+    depends_on:
+      - drone-test
+
+volumes:
+  videohub-data:
+    name: videohub-data

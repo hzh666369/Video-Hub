@@ -1,0 +1,386 @@
+/* ============================================================
+ * 运营看板 · HUD 指挥舱（Sci-Fi HUD Cockpit）布局原语
+ *
+ * 为什么单独成文件而不是写在 Dashboard.vue 的 scoped 里：
+ *   这些原语（毛玻璃卡片 / 面板骨架 / 标题栏 / 分段开关 / 状态徽章）
+ *   同时被 Dashboard.vue 与子组件 DashFeed / DashStatus 使用，
+ *   而 SFC 的 scoped 属性不会落到子组件内部的 DOM 上。放这里各取所需，
+ *   且全部以 .board 前缀限定作用域，不会外泄到站内其他页面。
+ *
+ * 形态语言（v6：对齐「深蓝科技 HUD 指挥大屏」参考稿）：
+ *   小圆角卡片 + 半透明深蓝底 + backdrop-filter 背景模糊；
+ *   边框 = 1px 发光蓝描边（--bd-ln）+ 顶部一道向两端渐隐的辉光（::before）
+ *   + 四角 HUD 角标（::after，颜色走 --bd-hud）+ 外圈辉光（--bd-hud-glow）；
+ *   面板标题 = 图标方块 + 常规字号白字。
+ * ============================================================ */
+
+.board {
+  /* 卡片圆角：所有模块共用，改一处即整体统一（v6 收小更利落） */
+  --r-card: 8px;
+}
+
+/* ---------- 发光 HUD 卡片 ---------- */
+.board .glassbox {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid var(--bd-ln);
+  border-radius: var(--r-card);
+  background: linear-gradient(180deg, var(--bd-card-a), var(--bd-card-b));
+  -webkit-backdrop-filter: blur(14px) saturate(1.25);
+  backdrop-filter: blur(14px) saturate(1.25);
+  /* 外圈 HUD 辉光 + 景深投影 + inset 顶光（玻璃的「厚度」）+ 内侧微光环境 */
+  box-shadow:
+    0 0 26px -12px var(--bd-hud-glow),
+    0 22px 44px -26px var(--bd-shadow-c),
+    inset 0 1px 0 var(--bd-ln-inner),
+    inset 0 0 30px -20px var(--bd-hud-glow);
+  transition: box-shadow 0.24s ease, border-color 0.24s ease;
+}
+
+/* 顶部辉光：一道向两端渐隐的 1px 亮线，颜色随模块的 --accent 走（默认 HUD 蓝） */
+.board .glassbox::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 6%;
+  right: 6%;
+  height: 1px;
+  pointer-events: none;
+  border-radius: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--accent, var(--bd-hud)) 50%,
+    transparent
+  );
+}
+
+/* 四角 HUD 角标（v6 参考稿同款）：四个角落各一个 L 形亮色标记，
+ * 用 8 条 1px×12px 渐变色块拼出，颜色走 --bd-hud（浅色档覆写为深蓝） */
+.board .glassbox::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.9;
+  background:
+    linear-gradient(var(--bd-hud), var(--bd-hud)) left 0 top 0 / 12px 2px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) left 0 top 0 / 2px 12px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) right 0 top 0 / 12px 2px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) right 0 top 0 / 2px 12px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) left 0 bottom 0 / 12px 2px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) left 0 bottom 0 / 2px 12px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) right 0 bottom 0 / 12px 2px no-repeat,
+    linear-gradient(var(--bd-hud), var(--bd-hud)) right 0 bottom 0 / 2px 12px no-repeat;
+}
+
+/* 面板悬停：描边提亮 + 辉光加深，模拟「抬起来一点」。布局零变化。 */
+.board .panel.glassbox:hover {
+  border-color: var(--bd-ln-hi);
+  box-shadow:
+    0 0 34px -10px var(--bd-hud-glow),
+    0 28px 52px -26px var(--bd-shadow-hi-c),
+    inset 0 1px 0 var(--bd-ln-inner),
+    inset 0 0 30px -20px var(--bd-hud-glow);
+}
+
+/* ---------- 面板内容骨架 ---------- */
+/* 内边距走变量：各面板可覆写 --pad-panel，避免用更高特异性去盖。 */
+.board .panel > .in {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--pad-panel, 13px 16px 14px);
+}
+
+/* ---------- 面板标题栏 ---------- */
+.board .p-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-shrink: 0;
+}
+/* 标题：图标方块 + 常规白字（v5：跟运营中控参考稿一致，不再大写间距） */
+.board .p-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0;
+  min-width: 0;
+  font-size: 14px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  color: var(--bd-t1);
+}
+/* 模块标题图标：玻璃质感芯片 v2 —— 半透明多层玻璃底（受光面亮蓝、底部几乎全透，
+ * 透出卡片与 aura 底色）+ backdrop blur 磨砂 + 全周受光描边（顶部最亮、底部暗边压厚度）
+ * + 外辉光；::after 顶部反光盖在字形上方（玻璃反光覆盖内容的层次感） */
+.board .p-ic {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  border-radius: 8px;
+  color: #eaf2ff;
+  background:
+    radial-gradient(130% 100% at 28% 12%, rgba(255, 255, 255, 0.34), transparent 52%),
+    linear-gradient(158deg,
+      color-mix(in srgb, var(--bd-azure) 46%, transparent) 0%,
+      color-mix(in srgb, var(--bd-azure) 18%, transparent) 52%,
+      color-mix(in srgb, var(--bd-azure) 6%, transparent) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(8, 18, 45, 0.3),
+    inset 0 0 0 1px rgba(168, 200, 255, 0.22),
+    0 4px 16px -5px color-mix(in srgb, var(--bd-azure) 72%, transparent);
+  -webkit-backdrop-filter: blur(8px) saturate(1.35);
+  backdrop-filter: blur(8px) saturate(1.35);
+}
+.board .p-ic::after {
+  content: "";
+  position: absolute;
+  top: 1px;
+  left: 2.5px;
+  right: 2.5px;
+  height: 45%;
+  border-radius: 6.5px 6.5px 10px 10px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0));
+  pointer-events: none;
+}
+.board .p-ic.aqua {
+  color: #ecfff9;
+  background:
+    radial-gradient(130% 100% at 28% 12%, rgba(255, 255, 255, 0.34), transparent 52%),
+    linear-gradient(158deg,
+      color-mix(in srgb, var(--bd-aqua) 46%, transparent) 0%,
+      color-mix(in srgb, var(--bd-aqua) 19%, transparent) 52%,
+      color-mix(in srgb, var(--bd-aqua) 7%, transparent) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.42),
+    inset 0 -1px 0 rgba(6, 30, 26, 0.3),
+    inset 0 0 0 1px rgba(190, 255, 240, 0.22),
+    0 4px 16px -5px color-mix(in srgb, var(--bd-aqua) 65%, transparent);
+}
+/* 浅色档：玻璃底转白底浅蓝，字形改回深色信号色保证可读 */
+html[data-theme="light"] .board .p-ic {
+  color: #1d4ed8;
+  background:
+    radial-gradient(130% 100% at 28% 14%, rgba(255, 255, 255, 0.85), transparent 55%),
+    linear-gradient(155deg,
+      color-mix(in srgb, var(--bd-azure) 24%, #fff) 0%,
+      color-mix(in srgb, var(--bd-azure) 9%, #fff) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(15, 23, 32, 0.06),
+    inset 0 0 0 1px color-mix(in srgb, var(--bd-azure) 30%, transparent),
+    0 3px 10px -4px color-mix(in srgb, var(--bd-azure) 45%, transparent);
+}
+html[data-theme="light"] .board .p-ic.aqua {
+  color: #0f766e;
+  background:
+    radial-gradient(130% 100% at 28% 14%, rgba(255, 255, 255, 0.85), transparent 55%),
+    linear-gradient(155deg,
+      color-mix(in srgb, var(--bd-aqua) 22%, #fff) 0%,
+      color-mix(in srgb, var(--bd-aqua) 8%, #fff) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(15, 23, 32, 0.06),
+    inset 0 0 0 1px color-mix(in srgb, var(--bd-aqua) 32%, transparent),
+    0 3px 10px -4px color-mix(in srgb, var(--bd-aqua) 40%, transparent);
+}
+/* 标题右侧的辅助链接（查看全部 / 更多） */
+.board .p-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  color: var(--bd-t3);
+  text-decoration: none;
+  transition: color 0.16s ease;
+}
+.board .p-more:hover { color: var(--bd-azure); }
+
+/* ---------- 分段开关（7D / 30D / 90D） ---------- */
+.board .seg {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  height: 26px;
+  padding: 2px;
+  border-radius: 999px;
+  border: 1px solid var(--bd-ln);
+  background: var(--bd-fill-soft);
+}
+.board .seg button {
+  height: 100%;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--bd-t3);
+  font: 600 10.5px/1 var(--font-mono);
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: color 0.16s ease, background 0.16s ease, box-shadow 0.16s ease;
+}
+.board .seg button:hover { color: var(--bd-t2); }
+.board .seg button.on {
+  color: var(--bd-t1);
+  background: color-mix(in srgb, var(--bd-azure) 28%, transparent);
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--bd-azure) 55%, transparent),
+    0 0 16px -5px color-mix(in srgb, var(--bd-azure) 80%, transparent);
+}
+
+/* ---------- 开关（自动滚动） ---------- */
+.board .sw-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 11px;
+  color: var(--bd-t3);
+  white-space: nowrap;
+}
+.board .sw {
+  position: relative;
+  width: 32px;
+  height: 17px;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  background: var(--bd-rail);
+  cursor: pointer;
+  transition: background 0.18s ease;
+}
+.board .sw i {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  transition: transform 0.18s var(--ease-out, ease-out);
+}
+.board .sw.on { background: var(--bd-azure); }
+.board .sw.on i { transform: translateX(15px); }
+.board .sw:focus-visible { outline: 2px solid var(--bd-azure); outline-offset: 2px; }
+
+/* ---------- LIVE 徽章 ---------- */
+.board .live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 17px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bd-ok) 13%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bd-ok) 32%, transparent);
+  color: var(--bd-ok);
+  font: 700 8.5px/1 var(--font-mono);
+  letter-spacing: 0.14em;
+}
+.board .live-pill i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--bd-ok);
+  box-shadow: 0 0 7px var(--bd-ok);
+}
+
+/* ---------- 状态徽章（成功 / 注册 / 登录 / 访问 / 异常 / ONLINE） ---------- */
+.board .badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  padding: 0 8px;
+  border-radius: 5px;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.board .badge.ok {
+  color: var(--bd-ok);
+  background: color-mix(in srgb, var(--bd-ok) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bd-ok) 30%, transparent);
+}
+/* 异常态（DashStatus API 探针失败等真实故障信号） */
+.board .badge.bad {
+  color: var(--bd-rose);
+  background: color-mix(in srgb, var(--bd-rose) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bd-rose) 32%, transparent);
+}
+.board .badge.info {
+  color: var(--bd-azure);
+  background: color-mix(in srgb, var(--bd-azure) 11%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bd-azure) 30%, transparent);
+}
+.board .badge.warn {
+  color: var(--bd-amber);
+  background: color-mix(in srgb, var(--bd-amber) 12%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bd-amber) 32%, transparent);
+}
+.board .badge.sys {
+  color: var(--bd-t3);
+  background: var(--bd-fill-soft);
+  border: 1px solid var(--bd-ln);
+}
+
+/* ---------- 涨跌胶囊徽章（v6 参考稿同款：↑ 12.6% 较昨日 装进色底胶囊） ---------- */
+.board .delta {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  padding: 2.5px 9px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+.board .delta.up {
+  color: var(--bd-ok);
+  background: color-mix(in srgb, var(--bd-ok) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bd-ok) 30%, transparent);
+}
+.board .delta.down {
+  color: var(--bd-rose);
+  background: color-mix(in srgb, var(--bd-rose) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--bd-rose) 32%, transparent);
+}
+.board .delta.flat {
+  color: var(--bd-t3);
+  font-weight: 500;
+  background: var(--bd-fill-soft);
+  box-shadow: inset 0 0 0 1px var(--bd-ln);
+}
+.board .delta .d-lbl {
+  font-family: var(--font-sans);
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--bd-t3);
+}
+
+/* ---------- 降级：视口不够高时，动态面板需要自己撑起高度 ---------- */
+@media (max-height: 820px) {
+  .board .feed-panel { min-height: 360px; }
+  .board .status-panel { min-height: 320px; }
+}
+@media (max-width: 1280px) {
+  .board .feed-panel { min-height: 380px; }
+  .board .status-panel { min-height: 320px; }
+}
