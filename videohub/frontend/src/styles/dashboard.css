@@ -375,12 +375,17 @@ html[data-theme="light"] .board .p-ic.aqua {
   color: var(--bd-t3);
 }
 
-/* ---------- 降级：视口不够高时，动态面板需要自己撑起高度 ---------- */
+/* ---------- 降级：视口不够高 / 栅格断列时，面板高度改由自身决定 ----------
+ * feed 列表的内容会被复制多份用于无缝回绕（见 DashFeed.vue 的 rows/measure），
+ * 一旦参与面板的外部高度计算，auto 高度的布局链（board→main→mid 的 grid auto 行）
+ * 会把全部副本展开，把整页撑出一条长滚动条；且 measure() 按被撑高的 clientHeight
+ * 算副本数会正反馈增长。因此这里必须用固定 height 而非 min-height，
+ * 让 .feed-scroll 的 overflow-y: auto 生效、列表收回面板内部滚动。 */
 @media (max-height: 820px) {
-  .board .feed-panel { min-height: 360px; }
+  .board .feed-panel { height: 360px; }
   .board .status-panel { min-height: 320px; }
 }
 @media (max-width: 1280px) {
-  .board .feed-panel { min-height: 380px; }
+  .board .feed-panel { height: 380px; }
   .board .status-panel { min-height: 320px; }
 }
